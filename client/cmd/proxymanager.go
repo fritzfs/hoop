@@ -113,6 +113,7 @@ func runAutoConnect(client pb.ClientTransport) (err error) {
 		case pbclient.SessionOpenWaitingApproval:
 			log.Infof("waiting for approval %v", string(pkt.Payload))
 		case pbclient.SessionOpenOK:
+			proxyAddr := string(pkt.Spec[pb.SpecClientRequestAddr])
 			proxyPort := string(pkt.Spec[pb.SpecClientRequestPort])
 			connnectionType := pb.ConnectionType(pkt.Spec[pb.SpecConnectionType])
 			if sid == "" {
@@ -122,7 +123,7 @@ func runAutoConnect(client pb.ClientTransport) (err error) {
 			client.StartKeepAlive()
 			switch connnectionType {
 			case pb.ConnectionTypePostgres:
-				srv := proxy.NewPGServer(proxyPort, client)
+				srv := proxy.NewPGServer(proxyAddr, proxyPort, client)
 				if err := srv.Serve(sid); err != nil {
 					return err
 				}

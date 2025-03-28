@@ -33,6 +33,7 @@ import (
 )
 
 type ConnectFlags struct {
+	proxyAddr string
 	proxyPort string
 	duration  string
 }
@@ -70,6 +71,7 @@ var (
 )
 
 func init() {
+	connectCmd.Flags().StringVarP(&connectFlags.proxyAddr, "address", "a", "", "The address to listen the proxy")
 	connectCmd.Flags().StringVarP(&connectFlags.proxyPort, "port", "p", "", "The port to listen the proxy")
 	connectCmd.Flags().StringSliceVarP(&inputEnvVars, "env", "e", nil, "Input environment variables to send")
 	connectCmd.Flags().StringVarP(&connectFlags.duration, "duration", "d", "30m", "The amount of time that the session will last. Valid time units are 's', 'm', 'h'")
@@ -77,6 +79,7 @@ func init() {
 }
 
 type connect struct {
+	proxyAddr      string
 	proxyPort      string
 	client         pb.ClientTransport
 	connStore      memory.Store
@@ -141,7 +144,7 @@ func runConnect(args []string, clientEnvVars map[string]string) {
 			connnectionType := pb.ConnectionType(pkt.Spec[pb.SpecConnectionType])
 			switch connnectionType {
 			case pb.ConnectionTypePostgres:
-				srv := proxy.NewPGServer(c.proxyPort, c.client)
+				srv := proxy.NewPGServer(c.proxyAddr, c.proxyPort, c.client)
 				if err := srv.Serve(string(sessionID)); err != nil {
 					c.processGracefulExit(err)
 				}
@@ -444,6 +447,7 @@ func (c *connect) printErrorAndExit(format string, v ...any) {
 
 func newClientConnect(config *clientconfig.Config, loader *spinner.Spinner, args []string, verb string) *connect {
 	c := &connect{
+		proxyAddr:      connectFlags.proxyAddr,
 		proxyPort:      connectFlags.proxyPort,
 		connStore:      memory.New(),
 		clientArgs:     args[1:],

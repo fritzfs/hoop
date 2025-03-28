@@ -28,12 +28,21 @@ type pgConnection struct {
 	backendKeyData *pgtypes.BackendKeyData
 }
 
-func NewPGServer(proxyPort string, client pb.ClientTransport) *PGServer {
-	listenAddr := defaultListenAddr(defaultPostgresPort)
-	if proxyPort != "" {
-		listenAddr = defaultListenAddr(proxyPort)
-	}
-	return &PGServer{
+func NewPGServer(proxyAddr string, proxyPort string, client pb.ClientTransport) *PGServer {
+  listenAddr := ""
+  if proxyAddr != "" {
+    if proxyPort != "" {
+      listenAddr = fmt.Sprintf("%s:%s", proxyAddr, proxyPort) 
+    } else {
+      listenAddr = fmt.Sprintf("%s:%s", proxyAddr, defaultPostgresPort)
+    }
+  } else {
+  	listenAddr = defaultListenAddr(defaultPostgresPort)
+  	if proxyPort != "" {
+  		listenAddr = defaultListenAddr(proxyPort)
+  	}
+  }
+  return &PGServer{
 		listenAddr:      listenAddr,
 		client:          client,
 		connectionStore: memory.New(),
